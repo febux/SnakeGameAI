@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "snakegameai"
+version = "0.1.0"
+description = ""
+authors = ["san <deadcove@mail.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+pydantic = "^2.6.2"
+pygame = "^2.5.2"
+numpy = "^1.26.4"
+tensorflow = "^2.16.0"
+torch = "^2.2.2"
+matplotlib = "^3.8.4"
+ipython = "^8.24.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
