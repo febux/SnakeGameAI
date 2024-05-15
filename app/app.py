@@ -95,6 +95,14 @@ class App:
         self.food_array: List[Food] = [self.locate_food() for _ in range(self.food_multiplier)]
         self.score = 0
 
+    @property
+    def fps(self):
+        return pygame.time.Clock()
+
+    @fps.setter
+    def fps(self, value):
+        self.fpsController.tick(value)
+
     def game_over(self) -> None:
         self.app_loop = AppLoop.STOP
 
@@ -168,22 +176,24 @@ class App:
         if self.direction != Direction.UNKNOWN and self.changeto != Direction.UNKNOWN:
             self.body.cells.insert(0, BodyCell(loc_x=self.head.loc_x, loc_y=self.head.loc_y))
 
-    def check_self_bait(self):
+    def check_self_bait(self, head_cell: Head = None) -> bool:
+        if head_cell is None:
+            head_cell = self.head
         for element in self.body.cells[1:]:
-            if self.head.loc_x == element.loc_x and self.head.loc_y == element.loc_y:
-                self.app_loop = AppLoop.STOP
-                break
+            if head_cell.loc_x == element.loc_x and head_cell.loc_y == element.loc_y:
+                return True
+        return False
 
-    def check_border_cross(self):
-        if self.head.loc_x > self.app_height:
-            self.head.loc_x = 0
-        elif self.head.loc_x < 0:
-            self.head.loc_x = self.app_height
+    def check_border_cross(self, head_cell: Head = None) -> bool:
+        if head_cell is None:
+            head_cell = self.head
+        if (head_cell.loc_x > self.app_height or head_cell.loc_x < 0
+                or head_cell.loc_y > self.app_width or head_cell.loc_y < 0):
+            return True
+        return False
 
-        if self.head.loc_y > self.app_width:
-            self.head.loc_y = 0
-        elif self.head.loc_y < 0:
-            self.head.loc_y = self.app_width
+    def is_collision(self, head_cell: Head = None) -> bool:
+        return self.check_self_bait(head_cell) or self.check_border_cross(head_cell)
 
     def generate_location(self) -> Tuple[int, int]:
         return (random.randrange(1, int(self.app_height / 10)) * 10,
@@ -239,29 +249,28 @@ class App:
             if self.direction != Direction.UNKNOWN and self.changeto != Direction.UNKNOWN:
                 self.body.cells.pop()
 
-        self.playSurface.fill(Color.WHITE.value)
+    def game_step(self):
+        if self.app_loop is AppLoop.RUN and not self.is_collision():
+            self.change_position()
+
+            self.monitoring_food_bait()
+
+            self.playSurface.fill(Color.WHITE.value)
+
+            self.draw_snake()
+
+            self.draw_food()
+
+            self.show_score()
+        else:
+            self.game_over()
+
+        pygame.display.update()
+
+        self.fpsController.tick(self.speed)
 
     def run(self):
         while True:
             self.event_listener()
 
-            if self.app_loop is AppLoop.RUN:
-                self.check_self_bait()
-
-                self.check_border_cross()
-
-                self.change_position()
-
-                self.monitoring_food_bait()
-
-                self.draw_snake()
-
-                self.draw_food()
-
-                self.show_score()
-            else:
-                self.game_over()
-
-            pygame.display.update()
-
-            self.fpsController.tick(self.speed)
+            self.game_step()

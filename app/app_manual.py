@@ -76,23 +76,4 @@ class AppManual(App):
         while True:
             self.event_listener()
 
-            if self.app_loop is AppLoop.RUN:
-                self.check_self_bait()
-
-                self.check_border_cross()
-
-                self.change_position()
-
-                self.monitoring_food_bait()
-
-                self.draw_snake()
-
-                self.draw_food()
-
-                self.show_score()
-            else:
-                self.game_over()
-
-            pygame.display.update()
-
-            self.fpsController.tick(self.speed)
+            self.game_step()

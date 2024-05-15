@@ -6,17 +6,28 @@ import os
 
 
 class Linear_QNet(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(
+        self,
+        input_layer_size,
+        hidden_layer_1_size,
+        hidden_layer_2_size,
+        hidden_layer_3_size,
+        output_layer_size,
+    ):
         super().__init__()
-        self.linear1 = nn.Linear(input_size, hidden_size)
-        self.linear2 = nn.Linear(hidden_size, output_size)
+        self.linear1 = nn.Linear(input_layer_size, hidden_layer_1_size)
+        self.linear2 = nn.Linear(hidden_layer_1_size, hidden_layer_2_size)
+        self.linear3 = nn.Linear(hidden_layer_2_size, hidden_layer_3_size)
+        self.linear4 = nn.Linear(hidden_layer_3_size, output_layer_size)
 
     def forward(self, x):
         x = functional.relu(self.linear1(x))
         x = self.linear2(x)
+        x = self.linear3(x)
+        x = self.linear4(x)
         return x
 
-    def save(self, file_name='model.pth'):
+    def save(self, file_name='model.pickle'):
         model_folder_path = './model'
         if not os.path.exists(model_folder_path):
             os.makedirs(model_folder_path)
