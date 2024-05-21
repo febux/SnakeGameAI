@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from cells.cell import Cell
+from field.cells.cell import Cell
 from constants.colors import Color
 
 

@@ -4,6 +4,8 @@ import torch.optim as optim
 import torch.nn.functional as functional
 import os
 
+from logger import self_logger
+
 
 class Linear_QNet(nn.Module):
     def __init__(
@@ -13,8 +15,12 @@ class Linear_QNet(nn.Module):
         hidden_layer_2_size,
         hidden_layer_3_size,
         output_layer_size,
+        *,
+        file_name='model.pth',
     ):
         super().__init__()
+        self._file_name = file_name
+
         self.linear1 = nn.Linear(input_layer_size, hidden_layer_1_size)
         self.linear2 = nn.Linear(hidden_layer_1_size, hidden_layer_2_size)
         self.linear3 = nn.Linear(hidden_layer_2_size, hidden_layer_3_size)
@@ -22,18 +28,30 @@ class Linear_QNet(nn.Module):
 
     def forward(self, x):
         x = functional.relu(self.linear1(x))
-        x = self.linear2(x)
-        x = self.linear3(x)
+        x = functional.relu(self.linear2(x))
+        x = functional.relu(self.linear3(x))
         x = self.linear4(x)
         return x
 
-    def save(self, file_name='model.pickle'):
+    @property
+    def file_name(self):
         model_folder_path = './model'
         if not os.path.exists(model_folder_path):
             os.makedirs(model_folder_path)
 
-        file_name = os.path.join(model_folder_path, file_name)
-        torch.save(self.state_dict(), file_name)
+        return os.path.join(model_folder_path, self._file_name)
+
+    def save(self):
+        torch.save(self.state_dict(), self.file_name)
+
+    def load(self):
+        try:
+            self.load_state_dict(torch.load(self.file_name))
+        except FileNotFoundError:
+            self_logger.warning('File not found. New model will be created.')
+        else:
+            self.eval()
+            self_logger.warning('Model was loaded successfully.')
 
 
 class QTrainer:

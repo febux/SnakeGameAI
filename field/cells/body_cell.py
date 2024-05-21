@@ -2,7 +2,7 @@ from typing import Tuple, List
 
 from pydantic import BaseModel
 
-from cells.cell import Cell
+from field.cells.cell import Cell
 from constants.colors import Color
 
 

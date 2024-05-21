@@ -75,5 +75,4 @@ class AppManual(App):
     def run(self):
         while True:
             self.event_listener()
-
             self.game_step()

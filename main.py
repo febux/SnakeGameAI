@@ -14,7 +14,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.ai:
-        app = AppAI(800, 800, speed=200, food_multiplier=3, agents_amount=1)
+        app = AppAI(640, 480, speed=200, food_multiplier=5)
     else:
         app = AppManual(800, 800, speed=8, food_multiplier=3)
 

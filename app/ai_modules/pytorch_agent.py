@@ -4,23 +4,23 @@ from typing import List
 import torch
 
 from app.app import Direction, App
-from cells.body_cell import Head
+from field.cells import Head
 from models.py_torch__model import Linear_QNet, QTrainer
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
-LR = 0.001
 
 
-class Agent:
+class PyTorchAgent:
 
     def __init__(self, *, food_multiplier: int = 1):
         self.n_games = 0
-        self.epsilon = 0  # randomness
+        self.epsilon = 80  # randomness first 80 games
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  # popleft()
         self.model = Linear_QNet(7 + (4 * food_multiplier), 256, 512, 256, 3)
-        self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
+        self.model.load()
+        self.trainer = QTrainer(self.model, lr=0.001, gamma=self.gamma)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))  # popleft if MAX_MEMORY is reached
@@ -41,9 +41,9 @@ class Agent:
 
     def get_action(self, state):
         # random moves: tradeoff exploration / exploitation
-        self.epsilon = 80 - self.n_games
+        epsilon = self.epsilon - self.n_games
         final_move = [0, 0, 0]
-        if random.randint(0, 200) < self.epsilon:
+        if random.randint(0, 200) < epsilon:
             move = random.randint(0, 2)
             final_move[move] = 1
         else:
@@ -54,7 +54,7 @@ class Agent:
         return final_move
 
     def get_state(self, game: App) -> List[int]:
-        head = game.head
+        head = game.field.snakes[0].head
         point_l = Head(loc_x=head.loc_x - game.block_size, loc_y=head.loc_y)
         point_r = Head(loc_x=head.loc_x + game.block_size, loc_y=head.loc_y)
         point_u = Head(loc_x=head.loc_x, loc_y=head.loc_y - game.block_size)
@@ -91,12 +91,12 @@ class Agent:
             dir_d,
         ]
 
-        for food in game.food_array:
+        for food in game.field.food:
             state += [
                 # Food location
-                food.loc_x < game.head.loc_x,  # food left
-                food.loc_x > game.head.loc_x,  # food right
-                food.loc_y < game.head.loc_y,  # food up
-                food.loc_y > game.head.loc_y  # food down
+                food.loc_x < head.loc_x,  # food left
+                food.loc_x > head.loc_x,  # food right
+                food.loc_y < head.loc_y,  # food up
+                food.loc_y > head.loc_y  # food down
             ]
         return list(map(int, state))
