@@ -65,6 +65,9 @@ class App:
                 ),
             ],
             food=[],
+            field_height=self.app_height // self.block_size,
+            field_width=self.app_width // self.block_size,
+            block_size=self.block_size,
         )
         self.field.food = [self.locate_food() for _ in range(self.food_multiplier)]
         self.direction = Direction.RIGHT
@@ -98,6 +101,9 @@ class App:
                 ),
             ],
             food=[self.locate_food() for _ in range(self.food_multiplier)],
+            field_height=self.app_height // self.block_size,
+            field_width=self.app_width // self.block_size,
+            block_size=self.block_size,
         )
         self.score = 0
 

@@ -58,8 +58,8 @@ class AppAI(App):
     def check_border_cross(self, head_cell: Head = None) -> bool:
         if head_cell is None:
             head_cell = self.field.snakes[0].head
-        if (head_cell.loc_x > self.app_height or head_cell.loc_x < 0
-                or head_cell.loc_y > self.app_width or head_cell.loc_y < 0):
+        if (head_cell.loc_x >= self.app_height or head_cell.loc_x <= 0
+                or head_cell.loc_y >= self.app_width or head_cell.loc_y <= 0):
             self.reward = -self.REWARD
             return True
         return False

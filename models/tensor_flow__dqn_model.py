@@ -12,10 +12,12 @@ class DQN:
     def __init__(
         self,
         input_shape: Tuple[int, int],
+        block_size: int,
         *,
         file_name='model.keras',
     ):
         self.input_shape = input_shape
+        self.block_size = block_size
         self.model = self.create_model()
         self.target_model = self.create_model()
         self.update_target_model()
@@ -30,7 +32,7 @@ class DQN:
 
     def create_model(self):
         model = Sequential([
-            Conv2D(32, (3, 3), activation='relu', input_shape=(self.input_shape[0], self.input_shape[1], 1)),
+            Conv2D(32, (3, 3), activation='relu', input_shape=(self.input_shape[0] / self.block_size, self.input_shape[1] / self.block_size, 1)),
             Conv2D(64, (3, 3), activation='relu'),
             Conv2D(64, (3, 3), activation='relu'),
             Flatten(),
