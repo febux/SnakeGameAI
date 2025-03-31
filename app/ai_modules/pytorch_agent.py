@@ -15,10 +15,10 @@ class PyTorchAgent:
 
     def __init__(self, *, food_multiplier: int = 1):
         self.n_games = 0
-        self.epsilon = 10  # randomness first 10 games
+        self.epsilon = 0  # randomness first epsilon games
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  # popleft()
-        self.model = Linear_QNet(7 + (4 * food_multiplier), 512, 3)
+        self.model = Linear_QNet(7 + (4 * food_multiplier), 256, 128, 3)
         self.model.load()
         self.trainer = QTrainer(self.model, lr=0.001, gamma=self.gamma)
 

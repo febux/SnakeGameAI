@@ -30,10 +30,10 @@ class AppAI(App):
             speed=speed,
         )
         self.agents = [PyTorchAgent(food_multiplier=food_multiplier) for _ in range(agents_amount)]
-        self.reward = 0
+        self.agent_reward = 0
         self.plot_available = plot_available
         self.frame_iteration = 0
-        self.REWARD = 100
+        self.REWARD_VALUE = 10
         self.FRAME_ITERATION = 200
 
     def start_game(self):
@@ -51,7 +51,7 @@ class AppAI(App):
             head_cell = self.field.snakes[0].head
         for element in self.field.snakes[0].body.cells[1:]:
             if head_cell.loc_x == element.loc_x and head_cell.loc_y == element.loc_y:
-                self.reward = -self.REWARD
+                self.agent_reward -= self.REWARD_VALUE
                 return True
         return False
 
@@ -60,7 +60,7 @@ class AppAI(App):
             head_cell = self.field.snakes[0].head
         if (head_cell.loc_x >= self.app_height or head_cell.loc_x <= 0
                 or head_cell.loc_y >= self.app_width or head_cell.loc_y <= 0):
-            self.reward = -self.REWARD
+            self.agent_reward -= self.REWARD_VALUE
             return True
         return False
 
@@ -69,7 +69,7 @@ class AppAI(App):
             if self.field.snakes[0].head.loc_x == food.loc_x and self.field.snakes[0].head.loc_y == food.loc_y:
                 self.eat_food(index)
                 self.score += 1
-                self.reward = self.REWARD
+                self.agent_reward += self.REWARD_VALUE
                 self.increase_body()
                 self.add_food()
         else:
@@ -78,7 +78,7 @@ class AppAI(App):
 
     def check_frame_iteration(self):
         if self.frame_iteration > self.FRAME_ITERATION * len(self.field.snakes[0].body.cells):
-            self.reward = -self.REWARD
+            self.agent_reward -= self.REWARD_VALUE
             return True
         return False
 
@@ -136,12 +136,12 @@ class AppAI(App):
                 state_new = self.agents[0].get_state(self)
 
                 # train short memory
-                self.agents[0].train_short_memory(state_old, final_move, self.reward, state_new, self.app_loop)
+                self.agents[0].train_short_memory(state_old, final_move, self.agent_reward, state_new, self.app_loop)
 
                 # remember
-                self.agents[0].remember(state_old, final_move, self.reward, state_new, self.app_loop)
+                self.agents[0].remember(state_old, final_move, self.agent_reward, state_new, self.app_loop)
 
-                self.reward = 0
+                self.agent_reward = 0
 
                 if self.app_loop is AppLoop.STOP:
                     # train long memory, plot result

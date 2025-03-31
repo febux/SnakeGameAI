@@ -51,15 +51,23 @@ class App:
         self.fpsController = pygame.time.Clock()
         self.font_size = 24 if (app_height > 500 and app_width > 300) else 14
         self.food_multiplier = food_multiplier
+        self.start_position_head_x = self.app_height // 2
+        self.start_position_head_y = self.app_width // 2
+        self.start_len_snake = 3+1
         self.field = Field(
             snakes=[
                 Snake(
-                    head=Head(loc_x=50, loc_y=50),
+                    head=Head(
+                        loc_x=self.start_position_head_x,
+                        loc_y=self.start_position_head_y,
+                    ),
                     body=Body(
                         cells=[
-                            BodyCell(loc_x=80, loc_y=50),
-                            BodyCell(loc_x=70, loc_y=50),
-                            BodyCell(loc_x=60, loc_y=50)
+                            BodyCell(
+                                loc_x=self.start_position_head_x + (i * self.block_size),
+                                loc_y=self.start_position_head_y,
+                            )
+                            for i in range(self.start_len_snake, 1, -1)
                         ],
                     ),
                 ),
@@ -90,12 +98,17 @@ class App:
         self.field = Field(
             snakes=[
                 Snake(
-                    head=Head(loc_x=50, loc_y=50),
+                    head=Head(
+                        loc_x=self.start_position_head_x,
+                        loc_y=self.start_position_head_y,
+                    ),
                     body=Body(
                         cells=[
-                            BodyCell(loc_x=80, loc_y=50),
-                            BodyCell(loc_x=70, loc_y=50),
-                            BodyCell(loc_x=60, loc_y=50)
+                            BodyCell(
+                                loc_x=self.start_position_head_x + (i * self.block_size),
+                                loc_y=self.start_position_head_y,
+                            )
+                            for i in range(self.start_len_snake, 1, -1)
                         ],
                     ),
                 ),
@@ -211,8 +224,10 @@ class App:
         return self.check_self_bait(head_cell) or self.check_border_cross(head_cell)
 
     def generate_location(self) -> Tuple[int, int]:
-        return (random.randrange(1, int(self.app_height / 10)) * 10,
-                random.randrange(1, int(self.app_width / 10)) * 10)
+        return (
+            random.randrange(self.block_size, self.app_height, self.block_size),
+            random.randrange(self.block_size, self.app_width, self.block_size),
+        )
 
     def locate_food(self) -> Food:
         compatible_place = False
@@ -246,7 +261,12 @@ class App:
         self.field.food.pop(index)
 
     def increase_body(self):
-        self.field.snakes[0].body.cells.append(BodyCell(loc_x=50, loc_y=50))
+        self.field.snakes[0].body.cells.append(
+            BodyCell(
+                loc_x=self.field.snakes[0].body.cells[-1].loc_x + self.block_size,
+                loc_y=self.field.snakes[0].body.cells[-1].loc_y + self.block_size,
+            )
+        )
 
     def draw_snake(self):
         for element in self.field.snakes[0].body.cells:

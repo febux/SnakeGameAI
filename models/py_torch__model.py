@@ -12,6 +12,7 @@ class Linear_QNet(nn.Module):
         self,
         input_layer_size,
         hidden_layer_1_size,
+        hidden_layer_2_size,
         output_layer_size,
         *,
         file_name='model.pth',
@@ -20,11 +21,13 @@ class Linear_QNet(nn.Module):
         self._file_name = file_name
 
         self.linear1 = nn.Linear(input_layer_size, hidden_layer_1_size)
-        self.linear2 = nn.Linear(hidden_layer_1_size, output_layer_size)
+        self.linear2 = nn.Linear(hidden_layer_1_size, hidden_layer_2_size)
+        self.linear3 = nn.Linear(hidden_layer_2_size, output_layer_size)
 
     def forward(self, x):
         x = functional.relu(self.linear1(x))
         x = self.linear2(x)
+        x = self.linear3(x)
         return x
 
     @property

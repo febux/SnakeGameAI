@@ -14,8 +14,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.ai:
-        app = AppAI(640, 480, speed=400, food_multiplier=5, plot_available=True)
+        app = AppAI(640, 480, speed=400, block_size=10, food_multiplier=1, plot_available=True)
     else:
-        app = AppManual(800, 800, speed=8, food_multiplier=3)
+        app = AppManual(800, 800, speed=8, block_size=10, food_multiplier=3)
 
     app.run()

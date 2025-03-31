@@ -1,23 +1,29 @@
-[tool.poetry]
-name = "snakegameai"
+[project]
+name = "cell-auto-life"
 version = "0.1.0"
-description = ""
-authors = ["san <deadcove@mail.ru>"]
-readme = "README.md"
+description = "Snake"
+requires-python = ">=3.12"
+dependencies = [
+    "annotated-types==0.6.0",
+    "customtkinter==5.2.2",
+    "darkdetect==0.8.0",
+    "ipython>=8.32.0",
+    "keras>=3.8.0",
+    "matplotlib>=3.10.0",
+    "numpy>=2.0.0",
+    "packaging==23.2",
+    "pydantic==2.6.0",
+    "pygame==2.5.2",
+    "tensorflow>=2.18.0",
+    "torch>=2.6.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.11"
-pydantic = "^2.6.2"
-pygame = "^2.5.2"
-numpy = "^1.26.4"
-tensorflow = "^2.16.0"
-torch = "^2.2.2"
-matplotlib = "^3.8.4"
-ipython = "^8.24.0"
-mpld3 = "^0.5.10"
-seaborn = "^0.13.2"
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux'" },
+]
 
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
