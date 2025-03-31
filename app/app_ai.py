@@ -4,7 +4,6 @@ import pygame
 from app.ai_modules.pytorch_agent import PyTorchAgent
 from app.ai_modules.plot import plot
 from app.app import App, Direction, AppLoop
-from field.cells import Head
 from constants.colors import Color
 from logger import self_logger
 
@@ -19,7 +18,6 @@ class AppAI(App):
         block_size: int = 10,
         food_multiplier: int = 1,
         speed: int = 5,
-        agents_amount: int = 1,
         plot_available: bool = False,
     ) -> None:
         super(AppAI, self).__init__(
@@ -29,7 +27,7 @@ class AppAI(App):
             food_multiplier=food_multiplier,
             speed=speed,
         )
-        self.agents = [PyTorchAgent(food_multiplier=food_multiplier) for _ in range(agents_amount)]
+        self.agent = PyTorchAgent(food_multiplier=food_multiplier)
         self.agent_reward = 0
         self.plot_available = plot_available
         self.frame_iteration = 0
@@ -44,48 +42,45 @@ class AppAI(App):
     def game_over(self) -> None:
         self.direction = self.changeto = Direction.UNKNOWN
         self.app_loop = AppLoop.STOP
-        pygame.display.update()
 
-    def check_self_bait(self, head_cell: Head = None) -> bool:
-        if head_cell is None:
-            head_cell = self.field.snakes[0].head
-        for element in self.field.snakes[0].body.cells[1:]:
-            if head_cell.loc_x == element.loc_x and head_cell.loc_y == element.loc_y:
-                self.agent_reward -= self.REWARD_VALUE
-                return True
-        return False
+    def change_position(self, action):
+        clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+        idx = clock_wise.index(self.direction)
 
-    def check_border_cross(self, head_cell: Head = None) -> bool:
-        if head_cell is None:
-            head_cell = self.field.snakes[0].head
-        if (head_cell.loc_x >= self.app_height or head_cell.loc_x <= 0
-                or head_cell.loc_y >= self.app_width or head_cell.loc_y <= 0):
-            self.agent_reward -= self.REWARD_VALUE
-            return True
-        return False
+        if np.array_equal(action, [1, 0, 0]):
+            new_dir = clock_wise[idx]  # no change
+        elif np.array_equal(action, [0, 1, 0]):
+            next_idx = (idx + 1) % 4
+            new_dir = clock_wise[next_idx]  # right turn r -> d -> l -> u
+        else:  # [0, 0, 1]
+            next_idx = (idx - 1) % 4
+            new_dir = clock_wise[next_idx]  # left turn r -> u -> l -> d
+
+        self.changeto = new_dir
 
     def monitoring_food_bait(self):
         for index, food in enumerate(self.field.food):
-            if self.field.snakes[0].head.loc_x == food.loc_x and self.field.snakes[0].head.loc_y == food.loc_y:
+            if self.field.snake.head.loc_x == food.loc_x and self.field.snake.head.loc_y == food.loc_y:
                 self.eat_food(index)
                 self.score += 1
                 self.agent_reward += self.REWARD_VALUE
                 self.increase_body()
                 self.add_food()
-        else:
-            if self.direction != Direction.UNKNOWN and self.changeto != Direction.UNKNOWN:
-                self.field.snakes[0].body.cells.pop()
+        if self.direction != Direction.UNKNOWN and self.changeto != Direction.UNKNOWN:
+            self.field.snake.body.cells.pop()
 
     def check_frame_iteration(self):
-        if self.frame_iteration > self.FRAME_ITERATION * len(self.field.snakes[0].body.cells):
-            self.agent_reward -= self.REWARD_VALUE
+        if self.frame_iteration > self.FRAME_ITERATION * len(self.field.snake.body.cells):
             return True
         return False
 
     def game_step(self):
-        if self.app_loop is AppLoop.RUN and not self.is_collision() and not self.check_frame_iteration():
-            self.change_position()
+        self.move()
 
+        if self.is_collision() or self.check_frame_iteration():
+            self.agent_reward -= self.REWARD_VALUE
+            self.game_over()
+        else:
             self.monitoring_food_bait()
 
             self.playSurface.fill(Color.WHITE.value)
@@ -95,8 +90,6 @@ class AppAI(App):
             self.draw_food()
 
             self.show_score()
-        else:
-            self.game_over()
 
         pygame.display.update()
 
@@ -111,53 +104,35 @@ class AppAI(App):
         while True:
             self.event_listener()
             # get old state
-            if self.app_loop is AppLoop.RUN:
-                self.frame_iteration += 1
-                state_old = self.agents[0].get_state(self)
+            self.frame_iteration += 1
+            state_old = self.agent.get_state(self)
+            # get move
+            final_move = self.agent.get_action(state_old)
+            # perform move and get new state
+            self.change_position(final_move)
+            self.game_step()
+            state_new = self.agent.get_state(self)
+            # train short memory
+            self.agent.train_short_memory(state_old, final_move, self.agent_reward, state_new, self.app_loop)
+            # remember
+            self.agent.remember(state_old, final_move, self.agent_reward, state_new, self.app_loop)
+            self.agent_reward = 0
 
-                # get move
-                final_move = self.agents[0].get_action(state_old)
+            if self.app_loop is AppLoop.STOP:
+                # train long memory, plot result
+                self.agent.n_games += 1
+                self.agent.train_long_memory()
 
-                # perform move and get new state
-                clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
-                idx = clock_wise.index(self.direction)
+                if self.score > record:
+                    record = self.score
+                    self.agent.model.save()
 
-                if np.array_equal(final_move, [1, 0, 0]):
-                    new_dir = clock_wise[idx]  # no change
-                elif np.array_equal(final_move, [0, 1, 0]):
-                    next_idx = (idx + 1) % 4
-                    new_dir = clock_wise[next_idx]  # right turn r -> d -> l -> u
-                else:  # [0, 0, 1]
-                    next_idx = (idx - 1) % 4
-                    new_dir = clock_wise[next_idx]  # left turn r -> u -> l -> d
+                self_logger.info(f'Game #{self.agent.n_games} Score: {self.score} Record: {record}')
 
-                self.changeto = new_dir
-                self.game_step()
-                state_new = self.agents[0].get_state(self)
-
-                # train short memory
-                self.agents[0].train_short_memory(state_old, final_move, self.agent_reward, state_new, self.app_loop)
-
-                # remember
-                self.agents[0].remember(state_old, final_move, self.agent_reward, state_new, self.app_loop)
-
-                self.agent_reward = 0
-
-                if self.app_loop is AppLoop.STOP:
-                    # train long memory, plot result
-                    self.agents[0].n_games += 1
-                    self.agents[0].train_long_memory()
-
-                    if self.score > record:
-                        record = self.score
-                        self.agents[0].model.save()
-
-                    self_logger.info(f'Game #{self.agents[0].n_games} Score: {self.score} Record: {record}')
-
-                    plot_scores.append(self.score)
-                    total_score += self.score
-                    mean_score = total_score / self.agents[0].n_games
-                    plot_mean_scores.append(mean_score)
-                    if self.plot_available:
-                        plot(plot_scores, plot_mean_scores)
-                    self.start_game()
+                plot_scores.append(self.score)
+                total_score += self.score
+                mean_score = total_score / self.agent.n_games
+                plot_mean_scores.append(mean_score)
+                if self.plot_available:
+                    plot(plot_scores, plot_mean_scores)
+                self.start_game()

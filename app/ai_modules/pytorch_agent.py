@@ -15,7 +15,7 @@ class PyTorchAgent:
 
     def __init__(self, *, food_multiplier: int = 1):
         self.n_games = 0
-        self.epsilon = 0  # randomness first epsilon games
+        self.epsilon = 80  # randomness first epsilon games
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  # popleft()
         self.model = Linear_QNet(7 + (4 * food_multiplier), 256, 128, 3)
@@ -54,7 +54,7 @@ class PyTorchAgent:
         return final_move
 
     def get_state(self, game: App) -> List[int]:
-        head = game.field.snakes[0].head
+        head = game.field.snake.head
         point_l = Head(loc_x=head.loc_x - game.block_size, loc_y=head.loc_y)
         point_r = Head(loc_x=head.loc_x + game.block_size, loc_y=head.loc_y)
         point_u = Head(loc_x=head.loc_x, loc_y=head.loc_y - game.block_size)

@@ -26,8 +26,8 @@ class Direction(Enum):
 
 
 class AppLoop(Enum):
-    RUN = True
-    STOP = False
+    RUN = False
+    STOP = True
 
 
 class App:
@@ -55,23 +55,21 @@ class App:
         self.start_position_head_y = self.app_width // 2
         self.start_len_snake = 3+1
         self.field = Field(
-            snakes=[
-                Snake(
-                    head=Head(
-                        loc_x=self.start_position_head_x,
-                        loc_y=self.start_position_head_y,
-                    ),
-                    body=Body(
-                        cells=[
-                            BodyCell(
-                                loc_x=self.start_position_head_x + (i * self.block_size),
-                                loc_y=self.start_position_head_y,
-                            )
-                            for i in range(self.start_len_snake, 1, -1)
-                        ],
-                    ),
+            snake=Snake(
+                head=Head(
+                    loc_x=self.start_position_head_x,
+                    loc_y=self.start_position_head_y,
                 ),
-            ],
+                body=Body(
+                    cells=[
+                        BodyCell(
+                            loc_x=self.start_position_head_x + (i * self.block_size),
+                            loc_y=self.start_position_head_y,
+                        )
+                        for i in range(self.start_len_snake, 1, -1)
+                    ],
+                ),
+            ),
             food=[],
             field_height=self.app_height // self.block_size,
             field_width=self.app_width // self.block_size,
@@ -96,23 +94,21 @@ class App:
     def start_game(self):
         self.app_loop = AppLoop.RUN
         self.field = Field(
-            snakes=[
-                Snake(
-                    head=Head(
-                        loc_x=self.start_position_head_x,
-                        loc_y=self.start_position_head_y,
-                    ),
-                    body=Body(
-                        cells=[
-                            BodyCell(
-                                loc_x=self.start_position_head_x + (i * self.block_size),
-                                loc_y=self.start_position_head_y,
-                            )
-                            for i in range(self.start_len_snake, 1, -1)
-                        ],
-                    ),
+            snake=Snake(
+                head=Head(
+                    loc_x=self.start_position_head_x,
+                    loc_y=self.start_position_head_y,
                 ),
-            ],
+                body=Body(
+                    cells=[
+                        BodyCell(
+                            loc_x=self.start_position_head_x + (i * self.block_size),
+                            loc_y=self.start_position_head_y,
+                        )
+                        for i in range(self.start_len_snake, 1, -1)
+                    ],
+                ),
+            ),
             food=[self.locate_food() for _ in range(self.food_multiplier)],
             field_height=self.app_height // self.block_size,
             field_width=self.app_width // self.block_size,
@@ -176,7 +172,7 @@ class App:
                     case pygame.K_r:
                         self.start_game()
 
-    def change_position(self):
+    def move(self):
         if self.direction != Direction.LEFT and self.changeto == Direction.RIGHT:
             self.direction = Direction.RIGHT
         elif self.direction != Direction.RIGHT and self.changeto == Direction.LEFT:
@@ -188,35 +184,35 @@ class App:
 
         match self.direction:
             case Direction.RIGHT:
-                self.field.snakes[0].head.loc_x += self.block_size
+                self.field.snake.head.loc_x += self.block_size
             case Direction.LEFT:
-                self.field.snakes[0].head.loc_x -= self.block_size
+                self.field.snake.head.loc_x -= self.block_size
             case Direction.UP:
-                self.field.snakes[0].head.loc_y -= self.block_size
+                self.field.snake.head.loc_y -= self.block_size
             case Direction.DOWN:
-                self.field.snakes[0].head.loc_y += self.block_size
+                self.field.snake.head.loc_y += self.block_size
             case Direction.UNKNOWN:
                 pass
 
         if self.direction != Direction.UNKNOWN and self.changeto != Direction.UNKNOWN:
-            self.field.snakes[0].body.cells.insert(
+            self.field.snake.body.cells.insert(
                 0,
-                BodyCell(loc_x=self.field.snakes[0].head.loc_x, loc_y=self.field.snakes[0].head.loc_y),
+                BodyCell(loc_x=self.field.snake.head.loc_x, loc_y=self.field.snake.head.loc_y),
             )
 
     def check_self_bait(self, head_cell: Head = None) -> bool:
         if head_cell is None:
-            head_cell = self.field.snakes[0].head
-        for element in self.field.snakes[0].body.cells[1:]:
+            head_cell = self.field.snake.head
+        for element in self.field.snake.body.cells[1:]:
             if head_cell.loc_x == element.loc_x and head_cell.loc_y == element.loc_y:
                 return True
         return False
 
     def check_border_cross(self, head_cell: Head = None) -> bool:
         if head_cell is None:
-            head_cell = self.field.snakes[0].head
-        if (head_cell.loc_x > self.app_height or head_cell.loc_x < 0
-                or head_cell.loc_y > self.app_width or head_cell.loc_y < 0):
+            head_cell = self.field.snake.head
+        if (head_cell.loc_x > self.app_height - self.block_size or head_cell.loc_x < 0
+                or head_cell.loc_y > self.app_width - self.block_size or head_cell.loc_y < 0):
             return True
         return False
 
@@ -242,7 +238,7 @@ class App:
                     loc_x, loc_y = self.generate_location()
                     continue
 
-            for cell in self.field.snakes[0].body.cells:
+            for cell in self.field.snake.body.cells:
                 if loc_x == cell.loc_x and loc_y == cell.loc_y:
                     compatible_place = False
                     loc_x, loc_y = self.generate_location()
@@ -261,33 +257,35 @@ class App:
         self.field.food.pop(index)
 
     def increase_body(self):
-        self.field.snakes[0].body.cells.append(
+        self.field.snake.body.cells.append(
             BodyCell(
-                loc_x=self.field.snakes[0].body.cells[-1].loc_x + self.block_size,
-                loc_y=self.field.snakes[0].body.cells[-1].loc_y + self.block_size,
+                loc_x=self.field.snake.body.cells[-1].loc_x + self.block_size,
+                loc_y=self.field.snake.body.cells[-1].loc_y + self.block_size,
             )
         )
 
     def draw_snake(self):
-        for element in self.field.snakes[0].body.cells:
+        for element in self.field.snake.body.cells:
             pygame.draw.rect(self.playSurface, pygame.Color(*element.color),
                              pygame.Rect(element.loc_x, element.loc_y, self.block_size, self.block_size))
 
     def monitoring_food_bait(self):
         for index, food in enumerate(self.field.food):
-            if self.field.snakes[0].head.loc_x == food.loc_x and self.field.snakes[0].head.loc_y == food.loc_y:
+            if self.field.snake.head.loc_x == food.loc_x and self.field.snake.head.loc_y == food.loc_y:
                 self.eat_food(index)
                 self.score += 1
                 self.increase_body()
                 self.add_food()
         else:
             if self.direction != Direction.UNKNOWN and self.changeto != Direction.UNKNOWN:
-                self.field.snakes[0].body.cells.pop()
+                self.field.snake.body.cells.pop()
 
     def game_step(self):
-        if self.app_loop is AppLoop.RUN and not self.is_collision():
-            self.change_position()
+        self.move()
 
+        if self.is_collision():
+            self.game_over()
+        else:
             self.monitoring_food_bait()
 
             self.playSurface.fill(Color.WHITE.value)
@@ -297,8 +295,6 @@ class App:
             self.draw_food()
 
             self.show_score()
-        else:
-            self.game_over()
 
         pygame.display.update()
 
