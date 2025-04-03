@@ -3,7 +3,7 @@ import time
 
 import pygame
 
-from app.app import App, Direction, AppLoop
+from app.app import App, Direction
 from constants.colors import Color
 
 
@@ -25,7 +25,6 @@ class AppManual(App):
 
     def game_over(self) -> None:
         self.direction = self.changeto = Direction.UNKNOWN
-        self.app_loop = AppLoop.STOP
         gaOFont = pygame.font.SysFont('Garamond', self.font_size * 2)
         self.game_over_surface = gaOFont.render('Game Over! '
                                                 'Press R to start again', True, Color.RED.value)
@@ -71,8 +70,3 @@ class AppManual(App):
                         self.music_on()
                     case pygame.K_m:
                         self.music_off()
-
-    def run(self):
-        while True:
-            self.event_listener()
-            self.game_step()

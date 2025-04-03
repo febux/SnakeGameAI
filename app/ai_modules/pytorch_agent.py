@@ -13,9 +13,9 @@ BATCH_SIZE = 1000
 
 class PyTorchAgent:
 
-    def __init__(self, *, food_multiplier: int = 1):
+    def __init__(self, *, food_multiplier: int = 1, train: bool = False):
         self.n_games = 0
-        self.epsilon = 80  # randomness first epsilon games
+        self.epsilon = 80 if train else -1  # randomness first epsilon games
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  # popleft()
         self.model = Linear_QNet(7 + (4 * food_multiplier), 256, 128, 3)

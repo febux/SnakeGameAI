@@ -25,11 +25,6 @@ class Direction(Enum):
     UNKNOWN = 'UNKNOWN'
 
 
-class AppLoop(Enum):
-    RUN = False
-    STOP = True
-
-
 class App:
     def __init__(
         self,
@@ -79,7 +74,6 @@ class App:
         self.direction = Direction.RIGHT
         self.changeto = self.direction
         self.score = 0
-        self.app_loop = AppLoop.RUN
         self.game_over_surface = None
 
     @staticmethod
@@ -92,7 +86,6 @@ class App:
             sys.exit()
 
     def start_game(self):
-        self.app_loop = AppLoop.RUN
         self.field = Field(
             snake=Snake(
                 head=Head(
@@ -125,7 +118,7 @@ class App:
         self.fpsController.tick(value)
 
     def game_over(self) -> None:
-        self.app_loop = AppLoop.STOP
+        pass
 
     def exit_game(self):
         pygame.display.update()
@@ -276,15 +269,15 @@ class App:
                 self.score += 1
                 self.increase_body()
                 self.add_food()
-        else:
-            if self.direction != Direction.UNKNOWN and self.changeto != Direction.UNKNOWN:
-                self.field.snake.body.cells.pop()
+        if self.direction != Direction.UNKNOWN and self.changeto != Direction.UNKNOWN:
+            self.field.snake.body.cells.pop()
 
     def game_step(self):
         self.move()
 
         if self.is_collision():
             self.game_over()
+            return None, True
         else:
             self.monitoring_food_bait()
 
@@ -299,8 +292,12 @@ class App:
         pygame.display.update()
 
         self.fpsController.tick(self.speed)
+        return None, False
 
     def run(self):
         while True:
             self.event_listener()
-            self.game_step()
+            _, game_over = self.game_step()
+
+            if game_over:
+                break
